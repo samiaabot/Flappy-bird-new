@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flappy Bird Canvas</title>
+    <style>
+        * {
+            padding: 0;
+            margin: 0;
+            box-sizing: border-box;
+        }
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f0f0f0;
+            font-family: Arial, sans-serif;
+        }
+        #gameCanvas {
+            border: 1px solid black;
+            background-color: white;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+
+    <canvas id="gameCanvas" width="400" height="500"></canvas>
+
+
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+
+
+        var jumping = 0;
+        var counter = 0;
+
+
+        var character = {
+            x: 50,
+            y: 100,
+            radius: 10,
+            color: "rgb(226, 24, 226)"
+        };
+
+
+        var block = {
+            x: 400,
+            width: 50,
+            speed: 2.25
+        };
+
+
+        var holeTop = -350;
+        canvas.addEventListener("click", jump);
+
+
+        function resetHole() {
+            var random = - ((Math.random() * 300) + 150);
+            holeTop = random;
+        }
+
+
+        setInterval(function() {
+            block.x -= block.speed;
+            if (block.x < -block.width) {
+                block.x = 400;
+                resetHole();
+            }
+
+
+            if (jumping == 0) {
+                character.y += 3;
+            }
+
+
+            if (character.y > 480) {
+                character.y = 100;
+                counter = 0;
+            }
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+
+            ctx.fillStyle = "black";
+            ctx.fillRect(block.x, 0, block.width, 500);
+
+
+            var holeY = 500 + holeTop;
+            ctx.fillStyle = "white";
+            ctx.fillRect(block.x, holeY, block.width, 150);
+
+
+            ctx.beginPath();
+            ctx.arc(character.x, character.y, character.radius, 0, Math.PI * 2);
+            ctx.fillStyle = character.color;
+            ctx.fill();
+            ctx.closePath();
+            if(characterTop>480){
+                alert("game over");
+                character.style.top = 100 + "px";
+            }
+
+
+        }, 10);
+
+
+        function jump() {
+            jumping = 1;
+            let jumpCount = 0;
+            var jumpInterval = setInterval(function() {
+                character.y -= 5;
+
+
+                if (character.y > 6 && counter<15) {
+                    character.y -= 5;
+                }
+
+
+                if (jumpCount > 20) {
+                    clearInterval(jumpInterval);
+                    jumping = 0;
+                    jumpCount = 0;
+                }
+                jumpCount++;
+            }, 10);
+        }
+    </script>
+</body>
+</html>
