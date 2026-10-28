@@ -1,133 +1,151 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Flappy Bird Canvas</title>
     <style>
-        * {
-            padding: 0;
-            margin: 0;
-            box-sizing: border-box;
-        }
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            background-color: #f0f0f0;
-            font-family: Arial, sans-serif;
-        }
-        #gameCanvas {
-            border: 1px solid black;
-            background-color: white;
-            cursor: pointer;
+        canvas {
+            border: 1px solid #000;
+            background: #ffc;
+            display: block;
+            margin: 0 auto;
         }
     </style>
+    <script src="https://code.jquery.com/jquery-3.7.1.slim.min.js"
+        integrity="sha256-kmHvs0B+OpCW5GVHUNjv9rOmY0IvSIRcf7zGUDTDQM8=" crossorigin="anonymous"></script>
 </head>
+
 <body>
-
-
-    <canvas id="gameCanvas" width="400" height="500"></canvas>
-
+    <canvas id="quadro" width="400" height="500"></canvas>
 
     <script>
-        const canvas = document.getElementById("gameCanvas");
-        const ctx = canvas.getContext("2d");
+        $(document).ready(function () {
+            var canvas = $("#quadro")[0];
+            var ctx = canvas.getContext("2d");
+            var frame;
+            var contPontos = 0;
+            var jogo = true;
 
+            var passaro = {
+                x: 50,
+                y: 100,
+                largura: 10, 
+                vy: 0,
+                gravidade: 0.35,
+                pulo: -6.5,
+                cor: "yellow",
+                
+                atualiza: function () {
+                    this.vy += this.gravidade;
+                    this.y += this.vy;
 
-        var jumping = 0;
-        var counter = 0;
+                    // Limite 
+                    if (this.y - this.largura <= 0) {
+                        this.y = this.largura;
+                        this.vy = 0;
+                    }
+                },
+                desenha: function () {
+                    ctx.fillStyle = this.cor;
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.largura, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.closePath();
+                },
+                pular: function () {
+                    this.vy = this.pulo;
+                }
+            };
 
+            var cano = {
+                x: 400,
+                largura: 50,
+                velocidade: 2.5,
+                topoCano: -350, 
+                
+                atualiza: function () {
+                    this.x -= this.velocidade;
 
-        var character = {
-            x: 50,
-            y: 100,
-            radius: 10,
-            color: "rgb(226, 24, 226)"
-        };
+                    if (this.x < -this.largura) {
+                        this.x = canvas.width;
+                        this.topoCano = - ((Math.random() * 250) + 150);
+                        contPontos++;
+                    }
+                },
+                desenha: function () {
+                    ctx.fillStyle = "black";
+                    ctx.fillRect(this.x, 0, this.largura, canvas.height);
 
+                    //Desenhando o buraco no cano
+                    var espacoCanoY = canvas.height + this.topoCano;
+                    var espacoCanoAltura = 150;
+                    ctx.fillStyle = "#ffc";
+                    ctx.fillRect(this.x, espacoCanoY, this.largura, espacoCanoAltura);
+                }
+            };
 
-        var block = {
-            x: 400,
-            width: 50,
-            speed: 2.25
-        };
+            // colisão
+            function colisao(passaro, cano) {
+                var espacoCanoY = canvas.height + cano.topoCano;
+                var espacoCanoAltura = 150;
 
+                var canoCima = (passaro.y - passaro.largura < espacoCanoY);
+                var canoBaixo = (passaro.y + passaro.largura > espacoCanoY + espacoCanoAltura);
 
-        var holeTop = -350;
-        canvas.addEventListener("click", jump);
-
-
-        function resetHole() {
-            var random = - ((Math.random() * 300) + 150);
-            holeTop = random;
-        }
-
-
-        setInterval(function() {
-            block.x -= block.speed;
-            if (block.x < -block.width) {
-                block.x = 400;
-                resetHole();
-            }
-
-
-            if (jumping == 0) {
-                character.y += 3;
-            }
-
-
-            if (character.y > 480) {
-                character.y = 100;
-                counter = 0;
-            }
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-
-            ctx.fillStyle = "black";
-            ctx.fillRect(block.x, 0, block.width, 500);
-
-
-            var holeY = 500 + holeTop;
-            ctx.fillStyle = "white";
-            ctx.fillRect(block.x, holeY, block.width, 150);
-
-
-            ctx.beginPath();
-            ctx.arc(character.x, character.y, character.radius, 0, Math.PI * 2);
-            ctx.fillStyle = character.color;
-            ctx.fill();
-            ctx.closePath();
-            if(characterTop>480){
-                alert("game over");
-                character.style.top = 100 + "px";
-            }
-
-
-        }, 10);
-
-
-        function jump() {
-            jumping = 1;
-            let jumpCount = 0;
-            var jumpInterval = setInterval(function() {
-                character.y -= 5;
-
-
-                if (character.y > 6 && counter<15) {
-                    character.y -= 5;
+                if ((passaro.x + passaro.largura > cano.x) && (passaro.x - passaro.largura < cano.x + cano.largura) && (canoCima || canoBaixo)) {
+                    return true;
                 }
 
-
-                if (jumpCount > 20) {
-                    clearInterval(jumpInterval);
-                    jumping = 0;
-                    jumpCount = 0;
+                if (passaro.y + passaro.largura >= canvas.height) {
+                    return true;
                 }
-                jumpCount++;
-            }, 10);
-        }
+
+                return false;
+            }
+
+            function pontuacao() {
+                ctx.font = "20px Georgia";
+                ctx.fillStyle = "black";
+                ctx.fillText("Pontos: " + contPontos, 10, 30);
+            }
+
+            function limpar() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            }
+
+            function animacao() {
+                limpar();
+
+                passaro.atualiza();
+                cano.atualiza();
+
+                cano.desenha();
+                passaro.desenha();
+                pontuacao();
+
+                if (colisao(passaro, cano)) {
+                    cancelAnimationFrame(frame);
+                    jogo = false; 
+                    ctx.font = "24px Georgia";
+                    ctx.fillStyle = "red";
+                    ctx.fillText("Você perdeu", canvas.width / 4, canvas.height / 2);
+                    return;
+                }
+
+                frame = requestAnimationFrame(animacao);
+            }
+
+            animacao();
+
+            $(document).keydown(function (event) {
+                if (event.which == 32 && jogo) { 
+                    passaro.pular();
+                }
+            });
+        });
     </script>
 </body>
+
 </html>
